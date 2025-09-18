@@ -93,10 +93,9 @@
     <div class="progress-text" id="progress-text">0 of 30 questions answered</div>
 
     <form id="quiz">
-      <!-- Questions will be injected here -->
-    </form>
-
-    <button id="submit">Generate Leadership Analysis & Share to WhatsApp</button>
+      </form>
+    
+    <button id="submit">Generate Leadership Analysis</button>
     
     <div id="error" class="message error">Please enter your name and answer all questions.</div>
     <div id="success" class="message success">Analysis generated successfully!</div>
@@ -385,8 +384,7 @@ function processAssessment() {
     // Show success message
     successElement.style.display = 'block';
     
-    // Launch WhatsApp sharing
-    setTimeout(() => initiateWhatsAppSharing(participantName, analysisResults), 2000);
+    // *** REMOVED *** WhatsApp sharing call is gone
     
   } catch (error) {
     console.error('Assessment Processing Error:', error);
@@ -395,7 +393,8 @@ function processAssessment() {
   } finally {
     // Restore button state
     submitButton.disabled = false;
-    submitButton.textContent = 'Generate Leadership Analysis & Share to WhatsApp';
+    // *** MODIFIED *** Button text updated
+    submitButton.textContent = 'Generate Leadership Analysis';
   }
 }
 
@@ -601,33 +600,8 @@ function generateDetailedPDFReport(participantName, analysisResults, userRespons
   pdf.save(fileName);
 }
 
-// Initiate WhatsApp sharing
-function initiateWhatsAppSharing(participantName, analysisResults) {
-  const phoneNumber = "916363253933";
-  
-  // Create concise summary for WhatsApp
-  let scoringSummary = '';
-  for (const [dimensionName, results] of Object.entries(analysisResults.dimensionResults)) {
-    const abbreviatedName = dimensionName.split(' ').map(word => word[0]).join('');
-    scoringSummary += `${abbreviatedName}:${results.totalScore}/25 `;
-  }
-  
-  const whatsappMessage = `${participantName} completed the Adaptive Leadership Assessment. Total Score: ${analysisResults.totalAssessmentScore}/150. Dimension Scores: ${scoringSummary.trim()}. Complete PDF report is attached.`;
-  const encodedMessage = encodeURIComponent(whatsappMessage);
-  
-  const whatsappWebURL = `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
-  const whatsappMobileURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-  
-  // Detect device type and open appropriate WhatsApp interface
-  const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  const targetURL = isMobileDevice ? whatsappMobileURL : whatsappWebURL;
-  
-  window.open(targetURL, '_blank');
-}
+// *** REMOVED *** The entire initiateWhatsAppSharing function is gone.
+
 </script>
 </body>
 </html>
-
-
-
-
