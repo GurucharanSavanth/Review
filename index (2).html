@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Adaptive Leadership Assessment</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root{--primary:#005a9c;--accent:#28a745;--bg:#f4f7f6;--text:#333;}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+         background:var(--bg);color:var(--text);padding:20px;line-height:1.4}
+    .wrapper{max-width:900px;margin:auto;background:#fff;border-radius:8px;
+             box-shadow:0 4px 10px rgba(0,0,0,.1);padding:32px}
+    h1{color:var(--primary);text-align:center;margin-bottom:8px;font-size:28px}
+    .intro{text-align:center;margin-bottom:32px;color:#666}
+    
+    .name-section{background:#f8f9fa;padding:20px;border-radius:6px;margin-bottom:30px}
+    .name-section label{font-weight:700;display:block;margin-bottom:8px}
+    .name-input{width:100%;padding:12px;border:2px solid #ddd;border-radius:5px;
+                font-size:16px;transition:border-color 0.3s}
+    .name-input:focus{outline:none;border-color:var(--primary)}
+    
+    fieldset{border:none;margin-bottom:25px;padding:15px;background:#fafafa;border-radius:6px}
+    legend{font-weight:600;margin-bottom:12px;font-size:15px;line-height:1.3;color:var(--primary)}
+    .options{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;max-width:600px}
+    .opt{display:flex;flex-direction:column;align-items:center;font-size:11px;
+         text-align:center;cursor:pointer;padding:10px;border-radius:4px;
+         transition:background 0.2s;border:1px solid #e0e0e0}
+    .opt:hover{background:#e8f4f8}
+    .opt input{margin-bottom:6px;cursor:pointer;transform:scale(1.2)}
+    .opt input:checked{accent-color:var(--primary)}
+    .opt input:checked + .opt-label{color:var(--primary);font-weight:700}
+    .opt-label{pointer-events:none;line-height:1.2}
+    
+    @media(max-width:768px){
+      .options{grid-template-columns:1fr;gap:5px}
+      .opt{flex-direction:row;justify-content:flex-start;text-align:left}
+      .opt input{margin:0 10px 0 0;transform:scale(1)}
+    }
+    
+    button{display:block;width:100%;padding:16px;font-size:16px;font-weight:600;
+           color:#fff;background:var(--accent);border:none;border-radius:6px;
+           cursor:pointer;transition:all 0.3s;margin-top:30px}
+    button:hover:not(:disabled){background:#218838;transform:translateY(-1px)}
+    button:disabled{background:#ccc;cursor:not-allowed;transform:none}
+    
+    .message{text-align:center;margin-top:15px;padding:12px;border-radius:5px;display:none}
+    .error{background:#fee;border:1px solid #fcc;color:#c33}
+    .success{background:#efe;border:1px solid #cfc;color:#363}
+    
+    .analysis-preview{background:#f8f9fa;padding:25px;border-radius:8px;margin-top:25px;
+                      display:none;border-left:4px solid var(--primary)}
+    .analysis-preview h3{color:var(--primary);margin-bottom:15px}
+    .dimension{margin-bottom:20px;padding:20px;background:#fff;border-radius:6px;
+               box-shadow:0 2px 4px rgba(0,0,0,.1)}
+    .dimension-name{font-weight:700;color:var(--primary);margin-bottom:8px;font-size:16px}
+    .dimension-desc{color:#666;margin-bottom:12px;font-style:italic}
+    .calculation{font-family:monospace;font-size:13px;background:#f0f8ff;
+                 padding:15px;border-radius:4px;margin:10px 0;border-left:3px solid var(--primary)}
+    .score-display{font-size:18px;font-weight:700;margin:10px 0}
+    .score-high{color:#28a745}
+    .score-mod-high{color:#fd7e14}
+    .score-mod-low{color:#ffc107}
+    .score-low{color:#dc3545}
+    
+    .progress{width:100%;height:6px;background:#eee;border-radius:3px;margin:20px 0;overflow:hidden}
+    .progress-bar{height:100%;background:var(--accent);width:0%;transition:width 0.3s}
+    .progress-text{text-align:center;margin-top:10px;font-size:14px;color:#666}
+    
+    footer{font-size:12px;text-align:center;margin-top:30px;color:#888}
+    
+    .scoring-summary{background:var(--primary);color:#fff;padding:20px;border-radius:6px;
+                     text-align:center;margin-bottom:20px}
+    .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-top:15px}
+    .summary-item{background:rgba(255,255,255,0.1);padding:15px;border-radius:4px}
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <h1>Adaptive Leadership Assessment</h1>
+    <p class="intro">Complete this comprehensive 30-question assessment for detailed leadership analysis</p>
+
+    <div class="name-section">
+      <label for="participant-name">Your Full Name:</label>
+      <input type="text" id="participant-name" class="name-input" 
+             placeholder="Enter your full name (required)" required>
+    </div>
+
+    <div class="progress">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <div class="progress-text" id="progress-text">0 of 30 questions answered</div>
+
+    <form id="quiz">
+      <!-- Questions will be injected here -->
+    </form>
+
+    <button id="submit">Generate Leadership Analysis & Share to WhatsApp</button>
+    
+    <div id="error" class="message error">Please enter your name and answer all questions.</div>
+    <div id="success" class="message success">Analysis generated successfully!</div>
+    
+    <div id="analysis-preview" class="analysis-preview">
+      <h3>Your Adaptive Leadership Analysis</h3>
+      <div id="analysis-content"></div>
+    </div>
+    
+    <footer>© <span id="year"></span> Adaptive Leadership Assessment System</footer>
+  </div>
+
+<script>
+// EXACT 30 questions from the assessment
+const questions = [
+  "When difficulties emerge in our organization, this leader is good at stepping back and assessing the dynamics of the people involved.",
+  "When events trigger strong emotional responses among employees, this leader uses his/her authority as a leader to resolve the problem.",
+  "When people feel uncertain about organizational change, they trust that this leader will help them work through the difficulties.",
+  "In complex situations, this leader gets people to focus on the issues they are trying to avoid.",
+  "When employees are struggling with a decision, this leader tells them what he/she thinks they should do.",
+  "During times of difficult change, this leader welcomes the thoughts of group members with low status.",
+  "In difficult situations, this leader sometimes loses sight of the \"big picture.\"",
+  "When people are struggling with a value conflict, this leader uses his or her expertise to tell them what to do.",
+  "When people begin to be disturbed by unresolved conflicts, this leader encourages them to address the issues.",
+  "During organizational change, this leader challenges people to concentrate on the \"hot\" topics.",
+  "When employees look to this leader for answers, he/she encourages them to think for themselves.",
+  "Listening to group members with radical ideas is valuable to this leader.",
+  "When this leader disagrees with someone, he/she has difficulty listening to what the other person is really saying.",
+  "When others are struggling with intense conflicts, this leader steps in to resolve their differences for them.",
+  "This leader has the emotional capacity to comfort others as they work through intense issues.",
+  "When people try to avoid controversial organizational issues, this leader brings these conflicts into the open.",
+  "This leader encourages his/her employees to take initiative in defining and solving problems.",
+  "This leader is open to people who bring up unusual ideas that seem to hinder the progress of the group.",
+  "In challenging situations, this leader likes to observe the parties involved and assess what's really going on.",
+  "This leader encourages people to discuss the \"elephant in the room.\"",
+  "People recognize that this leader has confidence to tackle challenging problems.",
+  "This leader thinks it is reasonable to let people avoid confronting difficult issues.",
+  "When people look to this leader to solve problems, he/she enjoys providing solutions.",
+  "This leader has an open ear for people who don't seem to fit in with the rest of the group.",
+  "In a difficult situation, this leader will step out of the dispute to gain perspective on it.",
+  "This leader thrives on helping people find new ways of coping with organizational problems.",
+  "People see this leader as someone who holds steady in the storm.",
+  "In an effort to keep things moving forward, this leader lets people avoid issues that are troublesome.",
+  "When people are uncertain about what to do, this leader empowers them to decide for themselves.",
+  "To restore equilibrium in the organization, this leader tries to neutralize comments of out-group members."
+];
+
+// EXACT scoring dimensions from instructions - TRIPLE CHECKED
+const scoringDimensions = {
+  "Get on the Balcony": {
+    description: "This score represents the degree to which you are able to step back and see the complexities and interrelated dimensions of a situation.",
+    instruction: "Sum items 1, 19, and 25 and the reversed (R) score values for 7 and 13 (i.e., change 1 to 5, 2 to 4, 4 to 2, and 5 to 1, with 3 remaining unchanged).",
+    regularItems: [1, 19, 25],
+    reverseItems: [7, 13]
+  },
+  "Identify the Adaptive Challenge": {
+    description: "This score represents the degree to which you recognize adaptive challenges and do not respond to these challenges with technical leadership.",
+    instruction: "Sum items 16 and 20 and the reversed (R) score values for 2, 8 and 14 (i.e., change 1 to 5, 2 to 4, 4 to 2, and 5 to 1, with 3 remaining unchanged).",
+    regularItems: [16, 20],
+    reverseItems: [2, 8, 14]
+  },
+  "Regulate Distress": {
+    description: "This score represents the degree to which you provide a safe environment in which others can tackle difficult problems and to which you are seen as confident and calm in conflict situations.",
+    instruction: "Sum items 3, 9, 15, 21, and 27.",
+    regularItems: [3, 9, 15, 21, 27],
+    reverseItems: []
+  },
+  "Maintain Disciplined Attention": {
+    description: "This score represents the degree to which you get others to face challenging issues and not let them avoid difficult problems.",
+    instruction: "Sum items 4, 10, and 26 and the reversed (R) score values for 22 and 28 (i.e., change 1 to 5, 2 to 4, 4 to 2, and 5 to 1, with 3 remaining unchanged).",
+    regularItems: [4, 10, 26],
+    reverseItems: [22, 28]
+  },
+  "Give the Work Back to People": {
+    description: "This score is the degree to which you empower others to think for themselves and solve their own problems.",
+    instruction: "Sum items 11, 17, and 29 and the reversed (R) score values for 5 and 23 (i.e., change 1 to 5, 2 to 4, 4 to 2, and 5 to 1, with 3 remaining unchanged).",
+    regularItems: [11, 17, 29],
+    reverseItems: [5, 23]
+  },
+  "Protect Leadership Voices from Below": {
+    description: "This score represents the degree to which you are open and accepting of unusual or radical contributions from low-status group members.",
+    instruction: "Sum items 6, 12, 18, and 24 and the reversed (R) score value for 30 (i.e., change 1 to 5, 2 to 4, 4 to 2, and 5 to 1, with 3 remaining unchanged).",
+    regularItems: [6, 12, 18, 24],
+    reverseItems: [30]
+  }
+};
+
+// EXACT reverse scoring function per instructions
+function reverseScore(originalScore) {
+  const reverseMap = {1: 5, 2: 4, 3: 3, 4: 2, 5: 1};
+  return reverseMap[parseInt(originalScore)] || 3;
+}
+
+// EXACT interpretation levels from instructions
+function getScoreInterpretation(score) {
+  if (score >= 21) return {
+    label: "High range: A score between 21 and 25 means you are strongly inclined to exhibit this adaptive leadership behavior.", 
+    class: "score-high"
+  };
+  if (score >= 16) return {
+    label: "Moderately high range: A score between 16 and 20 means you moderately exhibit this adaptive leadership behavior.", 
+    class: "score-mod-high"
+  };
+  if (score >= 11) return {
+    label: "Moderate low range: A score between 11 and 15 means you at times exhibit this adaptive leadership behavior.", 
+    class: "score-mod-low"
+  };
+  return {
+    label: "Low range: A score between 5 and 10 means you are seldom inclined to exhibit this adaptive leadership behavior.", 
+    class: "score-low"
+  };
+}
+
+// Calculate analysis with EXACT methodology
+function calculateLeadershipAnalysis(userResponses) {
+  const analysisResults = {};
+  const detailedCalculations = {};
+  
+  for (const [dimensionName, dimensionConfig] of Object.entries(scoringDimensions)) {
+    let totalDimensionScore = 0;
+    let calculationBreakdown = [];
+    let blankLineFormat = "";
+    
+    // Process regular items first
+    for (const itemNumber of dimensionConfig.regularItems) {
+      const userScore = parseInt(userResponses[`q${itemNumber}`]) || 0;
+      totalDimensionScore += userScore;
+      calculationBreakdown.push(`Item ${itemNumber}: ${userScore}`);
+      blankLineFormat += `_${userScore}_ ${itemNumber} `;
+    }
+    
+    // Process reverse items
+    for (const itemNumber of dimensionConfig.reverseItems) {
+      const originalScore = parseInt(userResponses[`q${itemNumber}`]) || 0;
+      const reversedScore = reverseScore(originalScore);
+      totalDimensionScore += reversedScore;
+      calculationBreakdown.push(`Item ${itemNumber}(R): ${originalScore}→${reversedScore}`);
+      blankLineFormat += `_${reversedScore}_ ${itemNumber}(R) `;
+    }
+    
+    blankLineFormat += `_${totalDimensionScore}_ Total`;
+    
+    const interpretation = getScoreInterpretation(totalDimensionScore);
+    
+    analysisResults[dimensionName] = {
+      totalScore: totalDimensionScore,
+      maxPossibleScore: 25,
+      interpretation: interpretation.label,
+      interpretationClass: interpretation.class,
+      description: dimensionConfig.description,
+      instruction: dimensionConfig.instruction,
+      calculationBreakdown: calculationBreakdown,
+      blankLineFormat: blankLineFormat
+    };
+    
+    detailedCalculations[dimensionName] = {
+      items: calculationBreakdown.join(", "),
+      calculation: `${calculationBreakdown.join(" + ")} = ${totalDimensionScore}`
+    };
+  }
+  
+  return {
+    dimensionResults: analysisResults,
+    calculations: detailedCalculations,
+    totalAssessmentScore: Object.values(analysisResults).reduce((sum, dim) => sum + dim.totalScore, 0)
+  };
+}
+
+// Track progress
+function updateProgress() {
+  const answeredCount = document.querySelectorAll('input[type="radio"]:checked').length;
+  const progressPercentage = (answeredCount / 30) * 100;
+  document.getElementById('progress-bar').style.width = progressPercentage + '%';
+  document.getElementById('progress-text').textContent = `${answeredCount} of 30 questions answered`;
+}
+
+// Initialize application
+document.addEventListener('DOMContentLoaded', function() {
+  // Generate all 30 questions with radio buttons
+  const questionForm = document.getElementById('quiz');
+  const responseOptions = [
+    {value: 1, label: "Strongly Disagree"},
+    {value: 2, label: "Disagree"},
+    {value: 3, label: "Neutral"},
+    {value: 4, label: "Agree"},
+    {value: 5, label: "Strongly Agree"}
+  ];
+  
+  questions.forEach((questionText, index) => {
+    const questionNumber = index + 1;
+    const fieldset = document.createElement('fieldset');
+    
+    const legend = document.createElement('legend');
+    legend.textContent = `${questionNumber}. ${questionText}`;
+    fieldset.appendChild(legend);
+    
+    const optionsContainer = document.createElement('div');
+    optionsContainer.className = 'options';
+    
+    responseOptions.forEach(option => {
+      const optionDiv = document.createElement('div');
+      optionDiv.className = 'opt';
+      
+      const radioInput = document.createElement('input');
+      radioInput.type = 'radio';
+      radioInput.name = `q${questionNumber}`;
+      radioInput.value = option.value;
+      radioInput.id = `q${questionNumber}-${option.value}`;
+      radioInput.required = true;
+      radioInput.addEventListener('change', updateProgress);
+      
+      const labelSpan = document.createElement('span');
+      labelSpan.className = 'opt-label';
+      labelSpan.textContent = `${option.value}\n(${option.label})`;
+      
+      optionDiv.appendChild(radioInput);
+      optionDiv.appendChild(labelSpan);
+      optionsContainer.appendChild(optionDiv);
+    });
+    
+    fieldset.appendChild(optionsContainer);
+    questionForm.appendChild(fieldset);
+  });
+  
+  // Set current year
+  document.getElementById('year').textContent = new Date().getFullYear();
+  
+  // Handle form submission
+  document.getElementById('submit').addEventListener('click', function(e) {
+    e.preventDefault();
+    processAssessment();
+  });
+});
+
+// Process the complete assessment
+function processAssessment() {
+  const participantNameInput = document.getElementById('participant-name');
+  const errorElement = document.getElementById('error');
+  const successElement = document.getElementById('success');
+  const analysisPreviewElement = document.getElementById('analysis-preview');
+  const submitButton = document.getElementById('submit');
+  
+  // Reset all message displays
+  [errorElement, successElement, analysisPreviewElement].forEach(el => el.style.display = 'none');
+  
+  // Validate participant name
+  const participantName = participantNameInput.value.trim();
+  if (!participantName) {
+    errorElement.textContent = 'Please enter your full name before proceeding.';
+    errorElement.style.display = 'block';
+    participantNameInput.focus();
+    return;
+  }
+  
+  // Validate all questions answered
+  const formData = new FormData(document.getElementById('quiz'));
+  const answeredQuestions = formData.size;
+  
+  if (answeredQuestions < 30) {
+    errorElement.textContent = `Please answer all questions. You have answered ${answeredQuestions} out of 30 questions.`;
+    errorElement.style.display = 'block';
+    return;
+  }
+  
+  // Convert form data to response object
+  const userResponses = {};
+  for (let [questionKey, responseValue] of formData.entries()) {
+    userResponses[questionKey] = responseValue;
+  }
+  
+  // Show processing state
+  submitButton.disabled = true;
+  submitButton.textContent = 'Generating Your Comprehensive Analysis...';
+  
+  try {
+    // Perform the leadership analysis
+    const analysisResults = calculateLeadershipAnalysis(userResponses);
+    
+    // Display preview of results
+    displayAnalysisPreview(participantName, analysisResults);
+    analysisPreviewElement.style.display = 'block';
+    
+    // Generate comprehensive PDF report
+    generateDetailedPDFReport(participantName, analysisResults, userResponses);
+    
+    // Show success message
+    successElement.style.display = 'block';
+    
+    // Launch WhatsApp sharing
+    setTimeout(() => initiateWhatsAppSharing(participantName, analysisResults), 2000);
+    
+  } catch (error) {
+    console.error('Assessment Processing Error:', error);
+    errorElement.textContent = 'An error occurred while processing your assessment. Please try again.';
+    errorElement.style.display = 'block';
+  } finally {
+    // Restore button state
+    submitButton.disabled = false;
+    submitButton.textContent = 'Generate Leadership Analysis & Share to WhatsApp';
+  }
+}
+
+// Display analysis preview
+function displayAnalysisPreview(participantName, analysisResults) {
+  const contentElement = document.getElementById('analysis-content');
+  
+  let previewHTML = `
+    <div class="scoring-summary">
+      <h4>${participantName}'s Adaptive Leadership Analysis Summary</h4>
+      <p>Total Assessment Score: <strong>${analysisResults.totalAssessmentScore}/150</strong></p>
+      <p>Assessment completed with comprehensive dimensional breakdown</p>
+    </div>
+    <h4>Scoring (Adaptive Leadership)</h4>
+  `;
+  
+  // Generate detailed breakdown for each dimension
+  for (const [dimensionName, results] of Object.entries(analysisResults.dimensionResults)) {
+    previewHTML += `
+      <div class="dimension">
+        <div class="dimension-name">${dimensionName}</div>
+        <div class="dimension-desc">${results.description}</div>
+        
+        <p><strong>To arrive at this score:</strong><br>
+        ${results.instruction}</p>
+        
+        <div class="calculation">
+          ${results.blankLineFormat}
+        </div>
+        
+        <div class="score-display">
+          <strong>Total Score: ${results.totalScore}/${results.maxPossibleScore}</strong>
+        </div>
+        
+        <div class="${results.interpretationClass}">
+          <strong>${results.interpretation}</strong>
+        </div>
+        
+        <p><em>Calculation breakdown: ${results.calculationBreakdown.join(', ')}</em></p>
+      </div>
+    `;
+  }
+  
+  // Add scoring interpretation section
+  previewHTML += `
+    <div style="background:#f0f8ff;padding:20px;border-radius:6px;margin-top:20px;border-left:4px solid var(--primary)">
+      <h4>Scoring Interpretation</h4>
+      <ul style="margin:15px 0 15px 25px;">
+        <li><strong>High range:</strong> A score between 21 and 25 means you are strongly inclined to exhibit this adaptive leadership behavior.</li>
+        <li><strong>Moderately high range:</strong> A score between 16 and 20 means you moderately exhibit this adaptive leadership behavior.</li>
+        <li><strong>Moderate low range:</strong> A score between 11 and 15 means you at times exhibit this adaptive leadership behavior.</li>
+        <li><strong>Low range:</strong> A score between 5 and 10 means you are seldom inclined to exhibit this adaptive leadership behavior.</li>
+      </ul>
+      <p style="margin-top:15px;font-style:italic;">
+        This questionnaire measures adaptive leadership by assessing six components of the process: get on the balcony, identify the adaptive challenge, 
+        regulate distress, maintain disciplined attention, give the work back to people, and protect leadership voices from below. 
+        By comparing your scores on each of these components, you can determine which are your stronger and which are your weaker components. 
+        The scoring chart allows you to see where your perceptions are the same as those of others and where they differ. 
+        There are no "perfect" scores for this questionnaire. While it is confirming that others see you in the same way as you see yourself, 
+        it is also beneficial to know when they see you differently. This assessment can help you understand those dimensions of your adaptive 
+        leadership that are strong and those dimensions of your adaptive leadership you may seek to improve.
+      </p>
+    </div>
+  `;
+  
+  contentElement.innerHTML = previewHTML;
+}
+
+// Generate detailed PDF report
+function generateDetailedPDFReport(participantName, analysisResults, userResponses) {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+  
+  // Page 1: Title and Executive Summary
+  pdf.setFontSize(22);
+  pdf.setTextColor(0, 90, 156);
+  pdf.text('Adaptive Leadership Assessment Report', 10, 25);
+  
+  pdf.setFontSize(16);
+  pdf.setTextColor(0, 0, 0);
+  pdf.text(`Participant: ${participantName}`, 10, 40);
+  
+  pdf.setFontSize(11);
+  pdf.text(`Assessment Date: ${new Date().toLocaleDateString()}`, 10, 50);
+  pdf.text(`Report Generated: ${new Date().toLocaleString()}`, 10, 55);
+  pdf.text(`Total Assessment Score: ${analysisResults.totalAssessmentScore}/150`, 10, 60);
+  
+  // Detailed Scoring Analysis
+  let yPosition = 75;
+  pdf.setFontSize(16);
+  pdf.setTextColor(0, 90, 156);
+  pdf.text('Scoring (Adaptive Leadership)', 10, yPosition);
+  yPosition += 15;
+  
+  pdf.setFontSize(10);
+  pdf.setTextColor(0, 0, 0);
+  
+  for (const [dimensionName, results] of Object.entries(analysisResults.dimensionResults)) {
+    // Check for page break
+    if (yPosition > 240) {
+      pdf.addPage();
+      yPosition = 20;
+    }
+    
+    // Dimension header
+    pdf.setFontSize(13);
+    pdf.setTextColor(0, 90, 156);
+    const headerText = `${dimensionName}—${results.description}`;
+    const headerLines = pdf.splitTextToSize(headerText, 185);
+    pdf.text(headerLines, 10, yPosition);
+    yPosition += headerLines.length * 5 + 5;
+    
+    // Instructions
+    pdf.setFontSize(9);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text('To arrive at this score:', 10, yPosition);
+    yPosition += 5;
+    
+    const instructionLines = pdf.splitTextToSize(results.instruction, 175);
+    pdf.text(instructionLines, 10, yPosition);
+    yPosition += instructionLines.length * 4 + 5;
+    
+    // Blank line format with scores
+    pdf.setFontSize(11);
+    pdf.text(results.blankLineFormat, 10, yPosition);
+    yPosition += 10;
+    
+    // Interpretation
+    pdf.setFontSize(10);
+    if (results.totalScore >= 21) pdf.setTextColor(40, 167, 69);
+    else if (results.totalScore >= 16) pdf.setTextColor(253, 126, 20);
+    else if (results.totalScore >= 11) pdf.setTextColor(255, 193, 7);
+    else pdf.setTextColor(220, 53, 69);
+    
+    const interpretationLines = pdf.splitTextToSize(results.interpretation, 175);
+    pdf.text(interpretationLines, 10, yPosition);
+    yPosition += interpretationLines.length * 4 + 12;
+    
+    pdf.setTextColor(0, 0, 0);
+  }
+  
+  // Add scoring interpretation page
+  pdf.addPage();
+  pdf.setFontSize(16);
+  pdf.setTextColor(0, 90, 156);
+  pdf.text('Scoring Interpretation', 10, 20);
+  
+  yPosition = 35;
+  pdf.setFontSize(10);
+  pdf.setTextColor(0, 0, 0);
+  
+  const interpretationTexts = [
+    'High range: A score between 21 and 25 means you are strongly inclined to exhibit this adaptive leadership behavior.',
+    'Moderately high range: A score between 16 and 20 means you moderately exhibit this adaptive leadership behavior.',
+    'Moderate low range: A score between 11 and 15 means you at times exhibit this adaptive leadership behavior.',
+    'Low range: A score between 5 and 10 means you are seldom inclined to exhibit this adaptive leadership behavior.'
+  ];
+  
+  interpretationTexts.forEach(text => {
+    const textLines = pdf.splitTextToSize(`• ${text}`, 175);
+    pdf.text(textLines, 15, yPosition);
+    yPosition += textLines.length * 5 + 3;
+  });
+  
+  yPosition += 5;
+  const conclusionText = 'This questionnaire measures adaptive leadership by assessing six components of the process: get on the balcony, identify the adaptive challenge, regulate distress, maintain disciplined attention, give the work back to people, and protect leadership voices from below. By comparing your scores on each of these components, you can determine which are your stronger and which are your weaker components.';
+  const conclusionLines = pdf.splitTextToSize(conclusionText, 180);
+  pdf.text(conclusionLines, 10, yPosition);
+  
+  // Add complete responses page
+  pdf.addPage();
+  pdf.setFontSize(16);
+  pdf.setTextColor(0, 90, 156);
+  pdf.text('Complete Response Details', 10, 20);
+  
+  yPosition = 35;
+  pdf.setFontSize(9);
+  pdf.setTextColor(0, 0, 0);
+  
+  const responseLabels = ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"];
+  
+  questions.forEach((questionText, index) => {
+    const questionNumber = index + 1;
+    const userAnswer = userResponses[`q${questionNumber}`];
+    
+    if (yPosition > 270) {
+      pdf.addPage();
+      yPosition = 20;
+    }
+    
+    // Question text
+    const questionLines = pdf.splitTextToSize(`${questionNumber}. ${questionText}`, 180);
+    pdf.text(questionLines, 10, yPosition);
+    yPosition += questionLines.length * 4 + 2;
+    
+    // User's answer
+    pdf.text(`Answer: ${userAnswer} (${responseLabels[userAnswer-1]})`, 15, yPosition);
+    yPosition += 7;
+  });
+  
+  // Save the PDF
+  const fileName = `${participantName.replace(/[^a-zA-Z0-9]/g, '-')}-Adaptive-Leadership-Assessment-Report.pdf`;
+  pdf.save(fileName);
+}
+
+// Initiate WhatsApp sharing
+function initiateWhatsAppSharing(participantName, analysisResults) {
+  const phoneNumber = "916363253932";
+  
+  // Create concise summary for WhatsApp
+  let scoringSummary = '';
+  for (const [dimensionName, results] of Object.entries(analysisResults.dimensionResults)) {
+    const abbreviatedName = dimensionName.split(' ').map(word => word[0]).join('');
+    scoringSummary += `${abbreviatedName}:${results.totalScore}/25 `;
+  }
+  
+  const whatsappMessage = `${participantName} completed the Adaptive Leadership Assessment. Total Score: ${analysisResults.totalAssessmentScore}/150. Dimension Scores: ${scoringSummary.trim()}. Complete PDF report is attached.`;
+  const encodedMessage = encodeURIComponent(whatsappMessage);
+  
+  const whatsappWebURL = `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
+  const whatsappMobileURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+  
+  // Detect device type and open appropriate WhatsApp interface
+  const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const targetURL = isMobileDevice ? whatsappMobileURL : whatsappWebURL;
+  
+  window.open(targetURL, '_blank');
+}
+</script>
+</body>
+</html>
